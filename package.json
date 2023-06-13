@@ -1,0 +1,24 @@
+{
+  "name": "mail",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "watch": "tsc-watch --onSuccess \"node dist/app.js\""
+  },
+  "dependencies": {
+    "@aws-sdk/client-ses": "^3.298.0",
+    "dotenv": "^16.1.4",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/dotenv": "^8.2.0",
+    "@types/node": "^20.2.5",
+    "ts-node": "^10.4.0",
+    "tsc-watch": "^6.0.4",
+    "typescript": "^4.6.2"
+  },
+  "author": "",
+  "license": "ISC"
+}

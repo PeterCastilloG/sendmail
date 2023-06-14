@@ -14,6 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const aws_ses_1 = require("./aws_ses");
 const xlsx_1 = __importDefault(require("xlsx"));
+const path_1 = __importDefault(require("path"));
 const mail = `Estimado/a [Nombre del candidato/a],
 Nos complace invitarte a postular al puesto de Desarrollador de software Full Stack en la empresa Globals S1. Tenemos una gran oportunidad de empleo de crecimiento y desarrollo profesional en un ambiente de trabajo dinámico y agradable.
 En Globals S1, nos enorgullece ser una empresa dl desarrollo de soluciones tecnológicas innovadoras. Estamos buscando a alguien con habilidades excepcionales y experiencia para unirse a nuestro equipo de trabajo como Desarrollador Full Stack.
@@ -43,11 +44,15 @@ class App {
 }
 const peter = new App();
 const readDb = () => {
-    const workbook = xlsx_1.default.readFile('./db/certus.xlsx');
+    const filePath = path_1.default.resolve(__dirname, './db/certus.xlsx');
+    const workbook = xlsx_1.default.readFile(filePath);
     const workbookSheets = workbook.SheetNames;
     const sheet = workbookSheets[0];
     const dataExcel = xlsx_1.default.utils.sheet_to_json(workbook.Sheets[sheet]);
-    console.log(dataExcel);
+    for (let index = 0; index < dataExcel.length; index++) {
+        const element = dataExcel[index];
+        console.log(element['CURSO | Perfil']);
+    }
 };
 readDb();
 // peter.sendEmail("peter.castillo@globals.one", "TEST01", mail)

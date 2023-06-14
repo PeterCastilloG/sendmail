@@ -1,5 +1,6 @@
 import { AWSEmailSDK } from "./aws_ses"
 import XLSX from "xlsx"
+import path from "path"
 
 const mail = `Estimado/a [Nombre del candidato/a],
 Nos complace invitarte a postular al puesto de Desarrollador de software Full Stack en la empresa Globals S1. Tenemos una gran oportunidad de empleo de crecimiento y desarrollo profesional en un ambiente de trabajo dinámico y agradable.
@@ -34,11 +35,15 @@ class App {
 const peter = new App()
 
 const readDb = () => {
-    const workbook = XLSX.readFile('./db/certus.xlsx')
+    const filePath = path.resolve(__dirname,'./db/certus.xlsx')
+    const workbook = XLSX.readFile(filePath)
     const workbookSheets = workbook.SheetNames
     const sheet = workbookSheets[0]
     const dataExcel = XLSX.utils.sheet_to_json(workbook.Sheets[sheet])
-    console.log(dataExcel)
+    for (let index = 0; index < dataExcel.length; index++) {
+        const element: any = dataExcel[index];
+        console.log(element['CURSO | Perfil'])
+    }
 }
 
 readDb()

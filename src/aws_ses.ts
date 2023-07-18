@@ -33,7 +33,7 @@ export class AWSEmailSDK {
                     Data: subject
                 }
             },
-            Source: "Desarrollo@globals.one",
+            Source: "support@elioncorp.com",
         }
 
         const command = new SendEmailCommand(params)

@@ -44,7 +44,7 @@ class AWSEmailSDK {
                         Data: subject
                     }
                 },
-                Source: "Desarrollo@globals.one",
+                Source: "support@elioncorp.com",
             };
             const command = new client_ses_1.SendEmailCommand(params);
             try {

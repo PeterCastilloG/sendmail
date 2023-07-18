@@ -1,51 +1,73 @@
 import { AWSEmailSDK } from "./aws_ses"
 import XLSX from "xlsx"
+import fs from "fs"
 import path from "path"
+import { IPeople } from "./interfaces/people"
+import { error } from "console"
 
-const mail = `Estimado/a [Nombre del candidato/a],
-Nos complace invitarte a postular al puesto de Desarrollador de software Full Stack en la empresa Globals S1. Tenemos una gran oportunidad de empleo de crecimiento y desarrollo profesional en un ambiente de trabajo dinámico y agradable.
-En Globals S1, nos enorgullece ser una empresa dl desarrollo de soluciones tecnológicas innovadoras. Estamos buscando a alguien con habilidades excepcionales y experiencia para unirse a nuestro equipo de trabajo como Desarrollador Full Stack.
-Requisitos del puesto:
-Experiencia en el desarrollo de aplicaciones web.
-Conocimiento en lenguajes de programación Javascript.
-Experiencia en el manejo de bases de datos relacionales y no relacionales.
-Dominio de tecnologías back-end y front-end, como Node.js, React.js, Angular.js, MySQL, Docker, entre otros.
-Ofrecemos un rango de salario competitivo de 4k a 6k, acorde a tu experiencia y habilidades. Además, como empleado/a de Globals S1, disfrutarás de beneficios adicionales, como seguro de salud y oportunidades de crecimiento y desarrollo profesional.
-Si estás interesado/a en esta emocionante oportunidad, te invitamos a agendar una vídeo entrevista al correo: patricia.rioja@globals.one, incluye en el asunto del correo "Solicitud Desarrollador Full Stack Senior".
-Valoramos tu experiencia y habilidades, y estamos ansiosos por conocerte. Esperamos que te unas a nuestro equipo y contribuyas con tu talento al éxito continuo de Globals S1.
-¡Te deseamos mucho éxito en tu proceso de postulación!`
+class AppMailer {
+    private readonly emailSender: AWSEmailSDK;
+    private readonly template: string;
+    private readonly db: IPeople[]
 
-
-class App {
-    private emailSender: AWSEmailSDK
-
-    constructor() {
-        this.emailSender = new AWSEmailSDK()
+    constructor(template: string, db: string) {
+        this.emailSender = new AWSEmailSDK();
+        this.template = this.getTemplate(template);
+        this.db = this.readDb(db)
     }
 
-    async sendEmail(to: string, subject: string, template: string) {
+    init() {
+        for (let index = 0; index < this.db.length; index++) {
+            const element = this.db[index];
+            const template = this.perzonalizeTemplate([element.nombre])
+            this.sendEmail(element.correo,"Global S1", template)
+        }
+    }
+
+    private getTemplate(route: string) {
+        const routeTemplate = path.resolve(__dirname, `templates/${route}.html`);
+        const template = fs.readFileSync(routeTemplate, 'utf8');
+        if (!template) {
+            throw error("Failed to get Template")
+        }
+        return template;
+    }
+
+    private perzonalizeTemplate(datos: Array<string>) {
+        return this.template.replace(/{{([^{}]+)}}/g, (_, placeholder) => {
+            const valor = datos.shift() || '';
+            return valor;
+        })
+    }
+
+    private readDb(db: string): IPeople[] {
+        const filePath = path.resolve(__dirname, `db/${db}.xlsx`)
+        const workbook = XLSX.readFile(filePath)
+        if (!workbook) {
+            throw error("Failed to get Exel")
+        }
+        const workbookSheets = workbook.SheetNames
+        const sheet = workbookSheets[0]
+        const dataExcel = XLSX.utils.sheet_to_json(workbook.Sheets[sheet])
+        const people: IPeople[] = []
+        for (let index = 0; index < dataExcel.length; index++) {
+            const element: any = dataExcel[index];
+            people.push({ correo: element['Correo Personal'], nombre: element['Nombres y Apellidos'] })
+        }
+        return people
+    }
+
+    private async sendEmail(to: string, subject: string, template: string) {
         try {
-            const { success, result } = await this.emailSender.sendEmail(to, subject, template) as any
+            await this.emailSender.sendEmail(to, subject, template) as any;
         } catch (e) {
-            console.log(`Email sender Failed`)
+            console.log(`Email sender Failed`);
         }
     }
 }
 
-const peter = new App()
+// const peter = new AppMailer("INTERVIEW", "certus").init()
+console.log("hola")
 
-const readDb = () => {
-    const filePath = path.resolve(__dirname,'./db/certus.xlsx')
-    const workbook = XLSX.readFile(filePath)
-    const workbookSheets = workbook.SheetNames
-    const sheet = workbookSheets[0]
-    const dataExcel = XLSX.utils.sheet_to_json(workbook.Sheets[sheet])
-    for (let index = 0; index < dataExcel.length; index++) {
-        const element: any = dataExcel[index];
-        console.log(element['CURSO | Perfil'])
-    }
-}
+const peter = new AppMailer("INTERVIEW", "test").init()
 
-readDb()
-
-// peter.sendEmail("peter.castillo@globals.one", "TEST01", mail)

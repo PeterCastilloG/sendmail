@@ -14,27 +14,56 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const aws_ses_1 = require("./aws_ses");
 const xlsx_1 = __importDefault(require("xlsx"));
+const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
-const mail = `Estimado/a [Nombre del candidato/a],
-Nos complace invitarte a postular al puesto de Desarrollador de software Full Stack en la empresa Globals S1. Tenemos una gran oportunidad de empleo de crecimiento y desarrollo profesional en un ambiente de trabajo dinámico y agradable.
-En Globals S1, nos enorgullece ser una empresa dl desarrollo de soluciones tecnológicas innovadoras. Estamos buscando a alguien con habilidades excepcionales y experiencia para unirse a nuestro equipo de trabajo como Desarrollador Full Stack.
-Requisitos del puesto:
-Experiencia en el desarrollo de aplicaciones web.
-Conocimiento en lenguajes de programación Javascript.
-Experiencia en el manejo de bases de datos relacionales y no relacionales.
-Dominio de tecnologías back-end y front-end, como Node.js, React.js, Angular.js, MySQL, Docker, entre otros.
-Ofrecemos un rango de salario competitivo de 4k a 6k, acorde a tu experiencia y habilidades. Además, como empleado/a de Globals S1, disfrutarás de beneficios adicionales, como seguro de salud y oportunidades de crecimiento y desarrollo profesional.
-Si estás interesado/a en esta emocionante oportunidad, te invitamos a agendar una vídeo entrevista al correo: patricia.rioja@globals.one, incluye en el asunto del correo "Solicitud Desarrollador Full Stack Senior".
-Valoramos tu experiencia y habilidades, y estamos ansiosos por conocerte. Esperamos que te unas a nuestro equipo y contribuyas con tu talento al éxito continuo de Globals S1.
-¡Te deseamos mucho éxito en tu proceso de postulación!`;
-class App {
-    constructor() {
+const console_1 = require("console");
+class AppMailer {
+    constructor(template, db) {
         this.emailSender = new aws_ses_1.AWSEmailSDK();
+        this.template = this.getTemplate(template);
+        this.db = this.readDb(db);
+    }
+    init() {
+        for (let index = 0; index < this.db.length; index++) {
+            const element = this.db[index];
+            const template = this.perzonalizeTemplate([element.nombre]);
+            this.sendEmail(element.correo, "Global S1", template);
+        }
+    }
+    getTemplate(route) {
+        const routeTemplate = path_1.default.resolve(__dirname, `templates/${route}.html`);
+        const template = fs_1.default.readFileSync(routeTemplate, 'utf8');
+        if (!template) {
+            throw (0, console_1.error)("Failed to get Template");
+        }
+        return template;
+    }
+    perzonalizeTemplate(datos) {
+        return this.template.replace(/{{([^{}]+)}}/g, (_, placeholder) => {
+            const valor = datos.shift() || '';
+            return valor;
+        });
+    }
+    readDb(db) {
+        const filePath = path_1.default.resolve(__dirname, `db/${db}.xlsx`);
+        const workbook = xlsx_1.default.readFile(filePath);
+        if (!workbook) {
+            throw (0, console_1.error)("Failed to get Exel");
+        }
+        const workbookSheets = workbook.SheetNames;
+        const sheet = workbookSheets[0];
+        const dataExcel = xlsx_1.default.utils.sheet_to_json(workbook.Sheets[sheet]);
+        const people = [];
+        for (let index = 0; index < dataExcel.length; index++) {
+            const element = dataExcel[index];
+            people.push({ correo: element['Correo Personal'], nombre: element['Nombres y Apellidos'] });
+        }
+        return people;
     }
     sendEmail(to, subject, template) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const { success, result } = yield this.emailSender.sendEmail(to, subject, template);
+                yield this.emailSender.sendEmail(to, subject, template);
             }
             catch (e) {
                 console.log(`Email sender Failed`);
@@ -42,17 +71,6 @@ class App {
         });
     }
 }
-const peter = new App();
-const readDb = () => {
-    const filePath = path_1.default.resolve(__dirname, './db/certus.xlsx');
-    const workbook = xlsx_1.default.readFile(filePath);
-    const workbookSheets = workbook.SheetNames;
-    const sheet = workbookSheets[0];
-    const dataExcel = xlsx_1.default.utils.sheet_to_json(workbook.Sheets[sheet]);
-    for (let index = 0; index < dataExcel.length; index++) {
-        const element = dataExcel[index];
-        console.log(element['CURSO | Perfil']);
-    }
-};
-readDb();
-// peter.sendEmail("peter.castillo@globals.one", "TEST01", mail)
+// const peter = new AppMailer("INTERVIEW", "certus").init()
+console.log("hola");
+const peter = new AppMailer("INTERVIEW", "test").init();
